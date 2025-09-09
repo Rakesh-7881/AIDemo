@@ -23,28 +23,27 @@ pipeline {
     }
 
     stage('Stop old app (if any)') {
-      steps {
-        powershell '''
-          $port = $env:APP_PORT
-          # Try modern cmdlet first
-          $pids = @()
-          try {
-            $conns = Get-NetTCPConnection -LocalPort $port -ErrorAction Stop
-            if ($conns) { $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique }
-          } catch {
-            # fallback using netstat
-            $lines = netstat -ano | findstr ":$port"
-            foreach ($line in $lines) {
-              $parts = $line -split '\s+'
-              $pids += $parts[-1]
-            }
-          }
-          foreach ($pid in $pids | Where-Object { $_ -ne $null }) {
-            try { Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue } catch {}
-          }
-        '''
+  steps {
+    powershell '''
+      $port = $env:APP_PORT
+      $pids = @()
+      try {
+        $conns = Get-NetTCPConnection -LocalPort $port -ErrorAction Stop
+        if ($conns) { $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique }
+      } catch {
+        $lines = netstat -ano | findstr ":$port"
+        foreach ($line in $lines) {
+          $parts = $line -split '\\s+'
+          $pids += $parts[-1]
+        }
       }
-    }
+      foreach ($pid in $pids | Where-Object { $_ -ne $null }) {
+        try { Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue } catch {}
+      }
+    '''
+  }
+}
+
 
     stage('Start app (detached)') {
       steps {
