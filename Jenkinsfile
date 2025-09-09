@@ -15,7 +15,7 @@ pipeline {
     stage('Setup Python venv & deps') {
     steps {
         bat '''
-            C:\\Python312\\python -m venv venv
+            C:\\Python311\\python -m venv venv
             venv\\Scripts\\pip install --upgrade pip setuptools wheel
             venv\\Scripts\\pip install -r requirements.txt
         '''
