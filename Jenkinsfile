@@ -13,16 +13,14 @@ pipeline {
     }
 
     stage('Setup Python venv & deps') {
-      steps {
-        powershell '''
-          if (-Not (Test-Path venv)) {
-            python -m venv venv
-          }
-          .\\venv\\Scripts\\python.exe -m pip install --upgrade pip setuptools wheel build
-          .\\venv\\Scripts\\python.exe -m pip install -r requirements.txt --verbose
+    steps {
+        bat '''
+            C:\\Python312\\python -m venv venv
+            venv\\Scripts\\pip install --upgrade pip setuptools wheel
+            venv\\Scripts\\pip install -r requirements.txt
         '''
-      }
     }
+}
 
     stage('Stop old app (if any)') {
       steps {
@@ -60,17 +58,7 @@ pipeline {
         '''
       }
     }
-    stage('Setup Python venv & deps') {
-    steps {
-        bat '''
-            C:\\Python312\\python -m venv venv
-            venv\\Scripts\\pip install --upgrade pip setuptools wheel
-            venv\\Scripts\\pip install -r requirements.txt
-        '''
-    }
-}
-
-
+  
     stage('Smoke test') {
       steps {
         powershell '''
