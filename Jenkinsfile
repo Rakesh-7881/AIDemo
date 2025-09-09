@@ -7,10 +7,20 @@ pipeline {
     OPENAI_API_KEY = credentials('OPENAI_API_KEY')
   }
 
-  stages {
-    stage('Checkout') {
-      steps { checkout scm }
-    }
+stage('Checkout') {
+  steps {
+    checkout([
+      $class: 'GitSCM',
+      branches: [[name: '*/main']],
+      userRemoteConfigs: [[
+        url: 'https://github.com/Rakesh-7881/AIDemo.git',
+        credentialsId: 'GITHUB_CREDENTIAL_ID' // if repo is private
+      ]],
+      gitTool: 'Default' // match the Git installation name in Jenkins Global Tool Config
+    ])
+  }
+}
+
 
     stage('Setup Python venv & deps') {
       steps {
