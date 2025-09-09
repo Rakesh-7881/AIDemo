@@ -45,27 +45,22 @@ pipeline {
       }
     }
 
-  stage('Start app (detached)') {
+stage('Start app (detached)') {
   steps {
     powershell '''
-      $port = $env:APP_PORT
-      if (-not $env:OPENAI_API_KEY) { Write-Host "OPENAI_API_KEY missing"; exit 1 }
+    $port = $env:APP_PORT
+    if (-not $env:OPENAI_API_KEY) { Write-Host "OPENAI_API_KEY missing"; exit 1 }
 
-      $appFile = Join-Path $env:WORKSPACE "app.py"
-      if (-not (Test-Path $appFile)) { Write-Host "app.py not found"; exit 1 }
-
-      Start-Process -FilePath ".\\venv\\Scripts\\python.exe" `
-                    -ArgumentList "`"$appFile`"","--port",$port `
-                    -WorkingDirectory "$env:WORKSPACE" `
-                    -RedirectStandardOutput "$env:WORKSPACE\\app.log" `
-                    -RedirectStandardError "$env:WORKSPACE\\app.err" `
-                    -NoNewWindow -WindowStyle Hidden
-
-      Write-Host "App started (detached)"
+    Start-Process -FilePath ".\\venv\\Scripts\\python.exe" `
+                  -ArgumentList "app.py","--port",$port `
+                  -WorkingDirectory "$env:WORKSPACE" `
+                  -RedirectStandardOutput "$env:WORKSPACE\\app.log" `
+                  -RedirectStandardError "$env:WORKSPACE\\app.err" `
+                  -NoNewWindow -WindowStyle Hidden
+    Write-Host "App started (detached)"
     '''
   }
 }
-
 
 stage('Smoke test') {
   steps {
