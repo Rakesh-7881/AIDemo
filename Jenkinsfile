@@ -45,7 +45,7 @@ pipeline {
       }
     }
 
-    stage('Start app (detached)') {
+  stage('Start app (detached)') {
   steps {
     powershell '''
       $port = $env:APP_PORT
@@ -66,21 +66,21 @@ pipeline {
   }
 }
 
-    stage('Smoke test') {
-      steps {
-        powershell '''
-          Start-Sleep -Seconds 5
-          try {
-            $url = "http://localhost:$env:APP_PORT"
-            Write-Host "Checking $url..."
-            $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 5
-            if ($r.StatusCode -eq 200) { Write-Host "OK: app responding" } else { Write-Host "Non-200 response"; exit 1 }
-          } catch {
-            Write-Host "App did not respond"; exit 1
-          }
-        '''
+
+stage('Smoke test') {
+  steps {
+    powershell '''
+      Start-Sleep -Seconds 5
+      try {
+        $r = Invoke-WebRequest -Uri ("http://localhost:"+$env:APP_PORT) -UseBasicParsing -TimeoutSec 5
+        if ($r.StatusCode -eq 200) { Write-Host "OK: app responding" } else { Write-Host "Non-200"; exit 1 }
+      } catch {
+        Write-Host "App did not respond"; exit 1
       }
-    }
+    '''
+  }
+}
+
   }
 
   post {
