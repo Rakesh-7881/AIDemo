@@ -24,7 +24,7 @@ pipeline {
 
     stage('Stop old app (if any)') {
       steps {
-        powershell '''
+          bat '''
           $port = $env:APP_PORT
           $pids = @()
           try {
@@ -46,7 +46,7 @@ pipeline {
 
     stage('Start app (detached)') {
       steps {
-        powershell '''
+          bat '''
           $port = $env:APP_PORT
           if (-not $env:OPENAI_API_KEY) { Write-Host "OPENAI_API_KEY missing"; exit 1 }
           Start-Process -FilePath ".\\venv\\Scripts\\python.exe" `
@@ -61,7 +61,7 @@ pipeline {
   
     stage('Smoke test') {
       steps {
-        powershell '''
+          bat '''
           Start-Sleep -Seconds 2
           try {
             $r = Invoke-WebRequest -Uri ("http://localhost:"+$env:APP_PORT) -UseBasicParsing -TimeoutSec 5
