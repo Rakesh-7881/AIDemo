@@ -75,6 +75,15 @@ pipeline {
       }
     }
   }
+  
+  stage('Install dependencies') {
+    steps {
+        bat '''
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt --verbose
+        '''
+    }
+}
 
   post {
     failure {
