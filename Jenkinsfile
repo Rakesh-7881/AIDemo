@@ -30,34 +30,24 @@ pipeline {
             }
         }
 
-        stage('Stop old app (if any)') {
-            steps {
-                powershell '''
-                    $port = $env:APP_PORT
-                    $pids = @()
-                    try {
-                        $conns = Get-NetTCPConnection -LocalPort $port -ErrorAction Stop
-                        if ($conns) { $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique }
-                    } catch {
-                        $lines = netstat -ano | findstr ":$port"
-                        foreach ($line in $lines) {
-                            $parts = $line -split '\\s+'
-                            $pids += $parts[-1]
-                        }
-                    }
-                    foreach ($pid in $pids | Where-Object { $_ -ne $null }) {
-                        try { Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue } catch {}
-                    }
-                    Write-Host "Stopped old processes on port $port (if any)"
-                '''
-            }
-        }
+stage('Stop old app (if any)') {
+    steps {
+        powershell '''
+        $port = 5000
+        $processes = Get-NetTCPConnection -LocalPort $port | ForEach-Object { Get-Process -Id $_.OwningProcess }
+        if ($processes) { $processes | Stop-Process -Force }
+        Write-Output "Stopped old processes on port $port (if any)"
+        '''
+    }
+}
+
 
 stage('Start app (detached)') {
     steps {
         powershell '''
-        Start-Process -NoNewWindow -FilePath "venv\\Scripts\\python.exe" -ArgumentList "app.py --port 5000"
+        Start-Process -NoNewWindow -FilePath "venv\\Scripts\\python.exe" -ArgumentList "app.py"
         Start-Sleep -Seconds 5
+        Write-Output "App started successfully."
         '''
     }
 }
