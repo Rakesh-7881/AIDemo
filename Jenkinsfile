@@ -13,18 +13,18 @@ pipeline {
     }
 
     stage('Setup Python venv & deps') {
-    steps {
+      steps {
         bat '''
-            C:\\Python311\\python -m venv venv
-            venv\\Scripts\\pip install --upgrade pip setuptools wheel
-            venv\\Scripts\\pip install -r requirements.txt
+          C:\\Python311\\python -m venv venv
+          venv\\Scripts\\pip install --upgrade pip setuptools wheel
+          venv\\Scripts\\pip install -r requirements.txt
         '''
+      }
     }
-}
 
     stage('Stop old app (if any)') {
       steps {
-          bat '''
+        powershell '''
           $port = $env:APP_PORT
           $pids = @()
           try {
@@ -40,32 +40,41 @@ pipeline {
           foreach ($pid in $pids | Where-Object { $_ -ne $null }) {
             try { Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue } catch {}
           }
+          Write-Host "Stopped old processes on port $port (if any)"
         '''
       }
     }
 
     stage('Start app (detached)') {
       steps {
-          bat '''
+        powershell '''
           $port = $env:APP_PORT
           if (-not $env:OPENAI_API_KEY) { Write-Host "OPENAI_API_KEY missing"; exit 1 }
+
+          $appPath = Join-Path $env:WORKSPACE "app.py"
+          if (-not (Test-Path $appPath)) { Write-Host "app.py not found"; exit 1 }
+
           Start-Process -FilePath ".\\venv\\Scripts\\python.exe" `
-                        -ArgumentList "app.py","--port",$port `
+                        -ArgumentList "$appPath","--port",$port `
                         -WorkingDirectory $env:WORKSPACE `
                         -RedirectStandardOutput "$env:WORKSPACE\\app.log" `
                         -RedirectStandardError "$env:WORKSPACE\\app.err" `
                         -NoNewWindow -WindowStyle Hidden
+
+          Write-Host "App started (detached)"
         '''
       }
     }
-  
+
     stage('Smoke test') {
       steps {
-          bat '''
-          Start-Sleep -Seconds 2
+        powershell '''
+          Start-Sleep -Seconds 5
           try {
-            $r = Invoke-WebRequest -Uri ("http://localhost:"+$env:APP_PORT) -UseBasicParsing -TimeoutSec 5
-            if ($r.StatusCode -eq 200) { Write-Host "OK: app responding" } else { Write-Host "Non-200"; exit 1 }
+            $url = "http://localhost:$env:APP_PORT"
+            Write-Host "Checking $url..."
+            $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 5
+            if ($r.StatusCode -eq 200) { Write-Host "OK: app responding" } else { Write-Host "Non-200 response"; exit 1 }
           } catch {
             Write-Host "App did not respond"; exit 1
           }
